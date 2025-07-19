@@ -1,0 +1,227 @@
+# ========================================
+# C HTTP Server Project .gitignore
+# ========================================
+
+# ===== BUILD ARTIFACTS =====
+# Compiled binaries
+bin/
+bin/*
+!bin/.gitkeep
+
+# Object files
+obj/
+obj/*
+*.o
+*.obj
+*.so
+*.so.*
+*.dylib
+*.dll
+*.lib
+*.a
+
+# Compiled executables
+server
+http_server
+webserver
+*.exe
+*.out
+
+# ===== LOGS & RUNTIME =====
+# Log files
+logs/
+logs/*
+!logs/.gitkeep
+*.log
+*.log.*
+
+# Runtime files
+*.pid
+*.lock
+core
+core.*
+vgcore.*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# ===== DEVELOPMENT TOOLS =====
+# IDE/Editor files
+.vscode/
+.idea/
+*.sublime-*
+.atom/
+.vs/
+
+# Tags files
+tags
+TAGS
+.tags
+.ctags
+
+# Debugging
+*.dSYM/
+*.pdb
+*.ilk
+gdb.txt
+*.gdb
+
+# ===== SYSTEM FILES =====
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+Icon?
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Linux
+.directory
+.Trash-*
+
+# ===== CONFIG & SECRETS =====
+# Configuration files (consider based on your needs)
+config/local.conf
+config/production.conf
+config/*.local
+config/.env
+config/secrets.*
+
+# SSL certificates and keys
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+ssl/
+certs/
+
+# ===== TESTING =====
+# Test outputs
+tests/output/
+tests/logs/
+tests/*.out
+tests/*.log
+
+# Coverage reports
+*.gcov
+*.gcda
+*.gcno
+coverage/
+*.lcov
+
+# Test databases
+test.db
+test.sqlite
+*.test
+
+# ===== DOCUMENTATION =====
+# Generated documentation
+docs/html/
+docs/latex/
+docs/man/
+*.pdf
+doxygen_sqlite3.db
+
+# ===== BACKUP & ARCHIVE =====
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+
+# Archive files
+*.zip
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.rar
+*.7z
+
+# ===== PUBLIC ASSETS (SELECTIVE) =====
+# Large media files (uncomment if needed)
+# public/videos/
+# public/uploads/
+# public/*.mp4
+# public/*.avi
+# public/*.mov
+
+# User uploaded content
+public/uploads/
+public/user_files/
+
+# ===== DEPENDENCY MANAGEMENT =====
+# Package managers
+node_modules/
+vendor/
+third_party/
+
+# ===== PERFORMANCE & PROFILING =====
+# Profiling data
+*.prof
+callgrind.out.*
+massif.out.*
+cachegrind.out.*
+perf.data*
+
+# ===== SECURITY =====
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# ===== PROJECT SPECIFIC =====
+# Custom build directories
+build/
+dist/
+release/
+debug/
+
+# Auto-generated files
+version.h
+build_info.h
+
+# ===== EXCEPTIONS (Keep These) =====
+# Keep important directories
+!src/
+!public/html/
+!public/css/
+!public/images/
+!public/downloads/
+!tests/
+!config/
+!README.md
+!Makefile
+!LICENSE
+
+# Keep example configs
+!config/example.conf
+!config/default.conf
+
+# Keep gitkeep files
+!.gitkeep

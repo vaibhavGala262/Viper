@@ -7,6 +7,7 @@
 
 #include "log.h"
 #include "client.h"
+#include "router.h"
 
 #define PORT 8080
 
@@ -37,6 +38,7 @@ int main()
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(PORT);
+    init_routes();
 
     // Bind socket
     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)

@@ -1,0 +1,37 @@
+// HTTP Request Structure 
+
+
+An HTTP request has three main parts:
+1. Request Line
+2. Headers
+3. (Optional) Body
+
+
+<HTTP_METHOD> <PATH> <HTTP_VERSION>\r\n    [1]
+Header-Name: Header-Value\r\n              [2]
+[Body data...]                             [3]
+
+
+Example:
+
+GET /hello.html HTTP/1.1\r\n                                    --request
+
+Host: www.example.com\r\n
+User-Agent: curl/7.81.0\r\n                                     --headers
+Accept: */*\r\n
+
+{"title": "Hello", "message": "World"}                          -- body
+
+
+Complete Example:
+
+POST /submit-form HTTP/1.1\r\n
+Host: www.example.com\r\n
+User-Agent: curl/7.81.0\r\n
+Content-Type: application/x-www-form-urlencoded\r\n
+Content-Length: 29\r\n
+\r\n
+username=vaibhav&password=1234
+    
+
+

@@ -117,6 +117,7 @@ certs/
 
 # ===== TESTING =====
 # Test outputs
+tests
 tests/output/
 tests/logs/
 tests/*.out

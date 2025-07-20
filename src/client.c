@@ -3,7 +3,8 @@
 #include "mime.h"
 #include "query.h"
 #include "router.h"
-#include "request.h"  // Add this include
+#include "request.h" 
+#include "api_handlers.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -44,7 +45,8 @@ void *handle_client(void *arg)
 
         // Parse HTTP request using the new request module
         HttpRequest req;
-        if (parse_http_request(buffer, &req) != 0) {
+        if (parse_http_request(buffer, &req) != 0)
+        {
             const char *err = "HTTP/1.1 400 Bad Request\r\n\r\nMalformed request";
             write(client_socket, err, strlen(err));
             close(client_socket);
@@ -57,108 +59,179 @@ void *handle_client(void *arg)
         write_log("INFO", method_log);
 
         // Log query parameters
-        for (int i = 0; i < req.query_count; i++) {
+        for (int i = 0; i < req.query_count; i++)
+        {
             char *log_entry;
-            if (asprintf(&log_entry, "Query Param - %s: %s", 
-                        req.query_params[i].key, req.query_params[i].value) != -1) {
+            if (asprintf(&log_entry, "Query Param - %s: %s",
+                         req.query_params[i].key, req.query_params[i].value) != -1)
+            {
                 write_log("INFO", log_entry);
                 free(log_entry);
-            } else {
+            }
+            else
+            {
                 write_log("ERROR", "Failed to allocate memory for log_entry");
             }
         }
 
         // Log headers
-        for (int i = 0; i < req.header_count; i++) {
+        for (int i = 0; i < req.header_count; i++)
+        {
             char header_log[256];
-            snprintf(header_log, sizeof(header_log), "Header - %s: %s", 
-                    req.headers[i].key, req.headers[i].value);
+            snprintf(header_log, sizeof(header_log), "Header - %s: %s",
+                     req.headers[i].key, req.headers[i].value);
             write_log("INFO", header_log);
         }
 
         // Check method
-        if (strcmp(req.method, "GET") != 0) {
+        if (strcmp(req.method, "GET") != 0)
+        {
             const char *err = "HTTP/1.1 405 Method Not Allowed\r\n\r\n";
             write(client_socket, err, strlen(err));
             close(client_socket);
             return NULL;
         }
 
-        // Check API routes
+        // UNIFIED ROUTE HANDLING No Diff logic for static and dynamic requests:
         RouteParam route_params[MAX_ROUTE_PARAMS];
-        int param_count = check_api_route(req.path, route_params);
+        Route *matched_route = NULL;
+        int param_count = check_route(req.path, route_params, &matched_route);
 
-        if (param_count >= 0) {
-            // API route matched!
-            printf("API route matched with %d parameters:\n", param_count);
+        if (param_count >= 0 && matched_route)
+        {
+            // Log the matched route
+            char route_log[256];
+            snprintf(route_log, sizeof(route_log), "Matched route: %s -> %s (type: %d)",
+                     matched_route->pattern, matched_route->handler_name, matched_route->type);
+            write_log("INFO", route_log);
 
-            // Print all parameters
-            for (int i = 0; i < param_count; i++) {
-                printf("  %s: %s\n", route_params[i].key, route_params[i].value);
+            switch (matched_route->type)
+            {
+            case ROUTE_TYPE_API:
+            {
+                // Find the actual handler function
+                HandlerFunc handler = find_handler_function(matched_route->handler_name);
 
-                // Log each parameter
-                char param_log[128];
-                snprintf(param_log, sizeof(param_log), "Route Param - %s: %s",
-                         route_params[i].key, route_params[i].value);
-                write_log("INFO", param_log);
+                if (handler)
+                {
+                    // Log parameters 
+                    printf("API route matched with %d parameters:\n", param_count);
+                    for (int i = 0; i < param_count; i++)
+                    {
+                        printf("  %s: %s\n", route_params[i].key, route_params[i].value);
+                        char param_log[128];
+                        snprintf(param_log, sizeof(param_log), "Route Param - %s: %s",
+                                 route_params[i].key, route_params[i].value);
+                        write_log("INFO", param_log);
+                    }
+
+                    // EXECUTE THE ACTUAL HANDLER FUNCTION
+                    ApiResponse api_response = handler(&req, route_params, param_count);
+
+                    // Send the real response
+                    char response_header[512];
+                    snprintf(response_header, sizeof(response_header),
+                             "HTTP/1.1 %d %s\r\n"
+                             "Content-Type: %s\r\n"
+                             "Content-Length: %zu\r\n"
+                             "\r\n",
+                             api_response.status_code,
+                             api_response.status_code == 200 ? "OK" : "Error",
+                             api_response.content_type,
+                             strlen(api_response.content));
+
+                    write(client_socket, response_header, strlen(response_header));
+                    write(client_socket, api_response.content, strlen(api_response.content));
+
+                    // Clean up memory
+                    free_api_response(&api_response);
+
+                    char success_log[256];
+                    snprintf(success_log, sizeof(success_log), "API handler '%s' executed successfully",
+                             matched_route->handler_name);
+                    write_log("INFO", success_log);
+                }
+                else
+                {
+                    // Handler function not found
+                    const char *error_response = "HTTP/1.1 501 Not Implemented\r\nContent-Type: application/json\r\n\r\n{\"error\": \"Handler not implemented\"}";
+                    write(client_socket, error_response, strlen(error_response));
+
+                    char error_log[256];
+                    snprintf(error_log, sizeof(error_log), "Handler function '%s' not found",
+                             matched_route->handler_name);
+                    write_log("ERROR", error_log);
+                }
+                break;
             }
 
-            // Handle different API endpoints
-            const char *user_id = get_route_param(route_params, param_count, "id");
-            const char *post_id = get_route_param(route_params, param_count, "post_id");
-            const char *category = get_route_param(route_params, param_count, "category");
+            case ROUTE_TYPE_STATIC:
+                // Handle static file serving
+                char *root = "public";
+                char full_path[2048];
+                snprintf(full_path, sizeof(full_path), "%s%s", root, matched_route->handler_name);
 
-            // You can also access headers if needed for API authentication, etc.
-            const char *auth_header = get_header_value(&req, "Authorization");
-            const char *content_type = get_header_value(&req, "Content-Type");
-            
-            if (auth_header) {
-                write_log("INFO", "Authorization header found");
+                FILE *fp = fopen(full_path, "rb");
+                if (!fp)
+                {
+                    const char *not_found = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n404 File Not Found";
+                    write(client_socket, not_found, strlen(not_found));
+                    write_log("ERROR", "Static file not found");
+                    close(client_socket);
+                    return NULL;
+                }
+
+                const char *mime = get_mime_type(matched_route->handler_name);
+                char header[256];
+                snprintf(header, sizeof(header),
+                         "HTTP/1.1 200 OK\r\n"
+                         "Content-Type: %s\r\n"
+                         "\r\n",
+                         mime);
+
+                write(client_socket, header, strlen(header));
+
+                char file_buf[1024];
+                size_t bytes_read_file;
+                while ((bytes_read_file = fread(file_buf, 1, sizeof(file_buf), fp)) > 0)
+                {
+                    write(client_socket, file_buf, bytes_read_file);
+                }
+                fclose(fp);
+                break;
+
+            case ROUTE_TYPE_REDIRECT:
+                // Handle redirect routes
+                char redirect_response[512];
+                snprintf(redirect_response, sizeof(redirect_response),
+                         "HTTP/1.1 301 Moved Permanently\r\n"
+                         "Location: %s\r\n"
+                         "Content-Length: 0\r\n"
+                         "\r\n",
+                         matched_route->handler_name);
+
+                write(client_socket, redirect_response, strlen(redirect_response));
+
+                char redirect_log[256];
+                snprintf(redirect_log, sizeof(redirect_log), "Redirected %s -> %s",
+                         req.path, matched_route->handler_name);
+                write_log("INFO", redirect_log);
+                break;
             }
-
-            // If you reach here, send a generic API response
-            const char *generic_api = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"message\": \"API endpoint matched\"}";
-            write(client_socket, generic_api, strlen(generic_api));
-            close(client_socket);
-            return NULL;
         }
-
-        // Static file serving
-        resolve_path(req.path); // resolve path according to router.c
-
-        char *root = "public"; // Static folder
-        char full_path[2048];
-        snprintf(full_path, sizeof(full_path), "%s%s", root, req.path);
-
-        FILE *fp = fopen(full_path, "rb");
-        if (!fp) {
-            // File not found: send 404 response
-            const char *not_found = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n404 Not Found";
+        else
+        {
+            // No route matched - 404
+            const char *not_found = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n404 Route Not Found";
             write(client_socket, not_found, strlen(not_found));
-            write_log("ERROR", "File not found");
-            close(client_socket);
-            return NULL;
+
+            char not_found_log[256];
+            snprintf(not_found_log, sizeof(not_found_log), "No route matched for path: %s", req.path);
+            write_log("ERROR", not_found_log);
         }
-
-        const char *mime = get_mime_type(req.path);
-        char header[256];
-        snprintf(header, sizeof(header),
-                 "HTTP/1.1 200 OK\r\n"
-                 "Content-Type: %s\r\n"
-                 "\r\n",
-                 mime);
-
-        write(client_socket, header, strlen(header));
-
-        char file_buf[1024];
-        size_t bytes_read_file;
-
-        while ((bytes_read_file = fread(file_buf, 1, sizeof(file_buf), fp)) > 0) {
-            write(client_socket, file_buf, bytes_read_file);
-        }
-        fclose(fp);
     }
-    else {
+    else
+    {
         write_log("ERROR", "Failed to read from client");
     }
 

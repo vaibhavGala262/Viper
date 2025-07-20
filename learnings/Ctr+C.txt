@@ -1,0 +1,13 @@
+Ctr+C without Any implementation stops server on Linux System Due to SIGINT sending signal to running process
+
+<-----NOTE----->
+It does not close opened resourses like sockets , opened files,etc
+
+
+<-----IMPORTANT----->
+For a production ready environment we have to Catch the SIGINT signal using a custom signal handler 
+Inside Handler :
+    1. Log "Server shutting down" or similar.
+    2. Close listening socket (close(server_socket)).
+    3. Free memory or resources (if needed).
+    4. Gracefully exit.

@@ -29,7 +29,7 @@ ApiResponse get_user_handler(HttpRequest *req, RouteParam *params, int param_cou
         asprintf(&response.content, "{\"error\": \"User ID not provided\"}");
         response.status_code = 400;
     }
-    response.content_type = "application/json";
+    response.content_type =strdup("application/json");
     
     return response;
 }
@@ -48,7 +48,7 @@ ApiResponse get_add(HttpRequest *req, RouteParam *params, int param_count){
     asprintf(&response.content, 
              "{\"num1\": %d, \"num2\": %d, \"sum\": %d, \"product\": %d}", 
              num1, num2, num1 + num2, num1 * num2);
-    response.content_type = "application/json";
+    response.content_type = strdup("application/json");
     response.status_code = 200;
     
     return response;
@@ -68,7 +68,7 @@ ApiResponse get_sub(HttpRequest *req, RouteParam *params, int param_count){
     asprintf(&response.content, 
              "{\"num1\": %d, \"num2\": %d, \"sub\": %d, \"division\": %d}", 
              num1, num2, num1 - num2, num1 % num2);
-    response.content_type = "application/json";
+    response.content_type = strdup("application/json");
     response.status_code = 200;
     
     return response;
@@ -90,7 +90,7 @@ ApiResponse get_current_time_handler(HttpRequest *req, RouteParam *params, int p
     asprintf(&response.content, 
              "{\"current_time\": \"%s\", \"timestamp\": %ld}", 
              time_buffer, raw_time);
-    response.content_type = "application/json";
+    response.content_type = strdup("application/json");
     response.status_code = 200;
     
     return response;
@@ -115,7 +115,7 @@ ApiResponse get_count_handler(HttpRequest *req, RouteParam *params, int param_co
     asprintf(&response.content, 
              "{\"count_id\": \"%s\", \"count_value\": %d}", 
              count_id ? count_id : "null", count_value);
-    response.content_type = "application/json";
+    response.content_type = strdup("application/json");
     response.status_code = 200;
     
     return response;
@@ -154,7 +154,7 @@ ApiResponse create_user_handler(HttpRequest *req, RouteParam *params, int param_
     if (strcmp(req->method, "POST") != 0 || !has_request_body(req)) {
         asprintf(&response.content, "{\"error\": \"POST request with body required\"}");
         response.status_code = 400;
-        response.content_type = "application/json";
+        response.content_type = strdup("application/json");
         return response;
     }
     
@@ -175,7 +175,7 @@ ApiResponse create_user_handler(HttpRequest *req, RouteParam *params, int param_
         response.status_code = 400;
     }
     
-    response.content_type = "application/json";
+    response.content_type = strdup("application/json");
     return response;
 }
 
@@ -192,7 +192,7 @@ ApiResponse update_user_handler(HttpRequest *req, RouteParam *params, int param_
     }
     
     ApiResponse response;
-    response.content_type = "application/json";
+    response.content_type =strdup("application/json");
     
     if (strcmp(req->method, "PUT") != 0 || !has_request_body(req)) {
         asprintf(&response.content, "{\"error\": \"PUT request with body required\"}");
@@ -215,10 +215,15 @@ ApiResponse update_user_handler(HttpRequest *req, RouteParam *params, int param_
     return response;
 }
 
-
-void free_api_response(ApiResponse *response) {
-    if (response && response->content) {
-        free(response->content);
-        response->content = NULL;
+void free_api_response(ApiResponse* response) {
+    if (response) {
+        if (response->content) {
+            free(response->content);
+            response->content = NULL;
+        }
+        if (response->content_type) {
+            free(response->content_type);
+            response->content_type = NULL;
+        }
     }
 }

@@ -6,9 +6,7 @@
 #include <stdio.h>
 
 middleware_chain_t* create_middleware_chain(void) {
-    printf("DEBUG: Creating middleware chain\n");
-    fflush(stdout);
-    
+   
     middleware_chain_t* chain = malloc(sizeof(middleware_chain_t));
     if (!chain) {
         printf("DEBUG: Failed to allocate middleware chain\n");
@@ -19,13 +17,12 @@ middleware_chain_t* create_middleware_chain(void) {
     chain->tail = NULL;
     chain->count = 0;
     
-    printf("DEBUG: Middleware chain created at %p\n", (void*)chain);
+    
     return chain;
 }
 
 void add_middleware(middleware_chain_t* chain, middleware_fn handler) {
-    printf("DEBUG: Adding middleware - chain: %p, handler: %p\n", (void*)chain, (void*)handler);
-    fflush(stdout);
+   
     
     if (!chain || !handler) {
         printf("DEBUG: NULL chain or handler in add_middleware\n");
@@ -50,25 +47,19 @@ void add_middleware(middleware_chain_t* chain, middleware_fn handler) {
     
     chain->count++;
     
-    printf("DEBUG: Middleware added - new count: %d, head: %p, tail: %p\n", 
-           chain->count, (void*)chain->head, (void*)chain->tail);
-    fflush(stdout);
 }
 
 
 
 middleware_result_t execute_middleware_chain(middleware_chain_t* chain, HttpRequest *req, ApiResponse *res) {
-    printf("DEBUG: execute_middleware_chain called\n");
-    fflush(stdout);
+    
     
     if (!chain) {
         printf("DEBUG: Chain is NULL\n");
         return MIDDLEWARE_CONTINUE;
     }
     
-    printf("DEBUG: Chain pointer: %p, head: %p, tail: %p, count: %d\n", 
-           (void*)chain, (void*)chain->head, (void*)chain->tail, chain->count);
-    fflush(stdout);
+   
     
     if (!chain->head) {
         printf("DEBUG: Chain head is NULL\n");
@@ -85,26 +76,19 @@ middleware_result_t execute_middleware_chain(middleware_chain_t* chain, HttpRequ
         return MIDDLEWARE_ERROR;
     }
     
-    printf("DEBUG: About to start middleware loop\n");
-    fflush(stdout);
+    
     
     middleware_node_t* current = chain->head;
     int middleware_index = 0;
     
     while (current) {
-        printf("DEBUG: Processing middleware %d at address %p\n", middleware_index, (void*)current);
-        fflush(stdout);
+       
         
         if (!current->handler) {
             printf("DEBUG: Handler is NULL for middleware %d\n", middleware_index);
             return MIDDLEWARE_ERROR;
         }
         
-        printf("DEBUG: Handler address: %p\n", (void*)current->handler);
-        fflush(stdout);
-        
-        printf("DEBUG: About to call handler for middleware %d\n", middleware_index);
-        fflush(stdout);
         
         middleware_result_t result = current->handler(req, res);
         
@@ -115,14 +99,9 @@ middleware_result_t execute_middleware_chain(middleware_chain_t* chain, HttpRequ
             return result;
         }
         
-        printf("DEBUG: Moving to next middleware\n");
-        fflush(stdout);
-        
         current = current->next;
         middleware_index++;
-        
-        printf("DEBUG: Next middleware address: %p\n", (void*)current);
-        fflush(stdout);
+      
     }
     
     printf("DEBUG: Middleware chain execution completed successfully\n");
@@ -147,9 +126,7 @@ void free_middleware_chain(middleware_chain_t* chain) {
 
 // Adding middleware below
 middleware_result_t cors_middleware(HttpRequest *req, ApiResponse *res) {
-    printf("DEBUG: CORS middleware called\n");
-    fflush(stdout);
-    
+  
     if (!req || !res) {
         printf("DEBUG: CORS middleware - NULL req or res\n");
         return MIDDLEWARE_ERROR;
@@ -165,13 +142,11 @@ middleware_result_t cors_middleware(HttpRequest *req, ApiResponse *res) {
         return MIDDLEWARE_STOP;
     }
     
-    printf("DEBUG: CORS middleware completed\n");
+   
     return MIDDLEWARE_CONTINUE;
 }
 
 middleware_result_t logging_middleware(HttpRequest *req, ApiResponse *res) {
-    printf("DEBUG: Logging middleware called\n");
-    fflush(stdout);
     
     if (!req) {
         printf("DEBUG: Logging middleware - NULL request\n");
@@ -181,7 +156,6 @@ middleware_result_t logging_middleware(HttpRequest *req, ApiResponse *res) {
     (void)res;
 
     
-    printf("DEBUG: Logging middleware completed\n");
     return MIDDLEWARE_CONTINUE;
 }
 
@@ -201,7 +175,7 @@ middleware_result_t strict_cors_middleware(HttpRequest *req, ApiResponse *res) {
         res->status_code = 403;
         res->content = strdup("{\"error\": \"CORS: Origin not allowed\"}");
         res->content_type = strdup("application/json");
-        return MIDDLEWARE_STOP;  // BLOCKED!
+        return MIDDLEWARE_STOP;  
     }
     
     return MIDDLEWARE_CONTINUE;
@@ -228,7 +202,8 @@ middleware_result_t auth_middleware(HttpRequest *req, ApiResponse *res) {
         return MIDDLEWARE_STOP;
     }
     
-    // Simple token validation (you can make this more sophisticated)
+
+    // Simple token validation which can be improved
     if (strncmp(auth_header, "Bearer ", 7) != 0) {
         write_log("WARN", "AUTH middleware: Invalid Authorization format");
         res->status_code = 401;

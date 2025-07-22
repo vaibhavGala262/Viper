@@ -29,7 +29,7 @@ typedef enum {
 typedef struct {
     char pattern[256];
     RouteType type;
-    char method[16];
+    char method[16];   
     // Use union to store different handler types efficiently
     union {
         HandlerFunc api_handler;      // Direct function pointer for API routes

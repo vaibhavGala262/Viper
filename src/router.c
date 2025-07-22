@@ -42,7 +42,7 @@ void init_routes(void) {
     add_redirect_route(&route_manager, "/index", "/");
     add_redirect_route(&route_manager, "/about", "/trail");
     
-    printf("Routes initialized with direct function pointers\n");
+   
 }
 
 int check_route_with_method(const char *path, const char *method, RouteParam *params, Route **matched_route) {

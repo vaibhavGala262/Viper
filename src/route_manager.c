@@ -65,8 +65,8 @@ int add_redirect_route(RouteManager *rm, const char *pattern, const char *redire
 int add_api_route_with_middleware(RouteManager *rm, const char *pattern, const char *method, 
                                  HandlerFunc handler, middleware_chain_t* middleware) {
     if (rm->count >= MAX_ROUTES) return -1;
-    printf("DEBUG: Registering route with middleware - Pattern: %s, Method: %s\n", pattern, method);
-    printf("DEBUG: Handler: %p, Middleware: %p\n", (void*)handler, (void*)middleware);
+    
+  
     
     Route *route = &rm->routes[rm->count];
     strcpy(route->pattern, pattern);

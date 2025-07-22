@@ -15,8 +15,7 @@ extern int server_socket;
 extern pthread_mutex_t connection_mutex;
 extern int active_connections;
 
-// Signal handler function
-void signal_handler(int signum);
+
 
 // Connection tracking functions
 void increment_connections(void);

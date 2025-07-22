@@ -49,12 +49,12 @@ bool has_request_body(const HttpRequest *req);
 // JSON body parsing (for API endpoints)
 int parse_json_body(const HttpRequest *req, const char *key, char *value, size_t value_size);
 
-// Form data parsing (for HTML forms)
 
+// Form data parsing (for HTML forms)
 
 int parse_form_data(const HttpRequest *req, FormParam *params, int max_params);
 
-// Cleanup function
+// Cleanup function (Free Mem)
 void free_request(HttpRequest *req);
 
 bool should_keep_alive(HttpRequest *req);   // to check if keep alive connection or not 

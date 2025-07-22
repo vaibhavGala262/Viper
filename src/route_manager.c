@@ -1,60 +1,82 @@
 #include "route_manager.h"
-#include <stdio.h>
+#include "middleware.h"
+
 #include <string.h>
+#include <stdio.h>
 
 void init_route_manager(RouteManager *rm) {
-    if (!rm) return;
     rm->count = 0;
+    memset(rm->routes, 0, sizeof(rm->routes));
 }
 
-int add_route(RouteManager *rm, const char *pattern, RouteType type, const char *handler_name) {
-    if (!rm || !pattern || rm->count >= MAX_ROUTES) return -1;
+int add_api_route_with_method(RouteManager *rm, const char *pattern, const char *method, HandlerFunc handler) {
+    if (rm->count >= MAX_ROUTES) return -1;
     
-    strncpy(rm->routes[rm->count].pattern, pattern, sizeof(rm->routes[rm->count].pattern) - 1);
-    rm->routes[rm->count].pattern[sizeof(rm->routes[rm->count].pattern) - 1] = '\0';
+    Route *route = &rm->routes[rm->count];
+    strcpy(route->pattern, pattern);
+    strcpy(route->method, method);
+    route->type = ROUTE_TYPE_API;
+    route->handler.api_handler = handler;
+    route->middleware = NULL;  // No middleware for regular routes
     
-    rm->routes[rm->count].type = type;
-    
-    if (handler_name) {
-        strncpy(rm->routes[rm->count].handler_name, handler_name, sizeof(rm->routes[rm->count].handler_name) - 1);
-        rm->routes[rm->count].handler_name[sizeof(rm->routes[rm->count].handler_name) - 1] = '\0';
-    } else {
-        rm->routes[rm->count].handler_name[0] = '\0';
-    }
-    
-    return rm->count++;
+    rm->count++;
+    return 0;
 }
-
-int find_route(RouteManager *rm, const char *path, RouteParam *params, int max_params, Route **matched_route) {
-    if (!rm || !path || !params) return -1;
-    
+int find_route(RouteManager *rm, const char *path, const char *method, RouteParam *params, int max_params, Route **matched_route) {
     for (int i = 0; i < rm->count; i++) {
         int param_count = match_route(rm->routes[i].pattern, path, params, max_params);
         if (param_count >= 0) {
-            if (matched_route) {
+            // Check if HTTP method matches or route accepts all methods (empty method field)
+            if (strlen(rm->routes[i].method) == 0 || strcasecmp(rm->routes[i].method, method) == 0) {
                 *matched_route = &rm->routes[i];
+                return param_count;
             }
-            return param_count;
         }
     }
+    return -1; // No matching route found
+}
+int add_static_route(RouteManager *rm, const char *pattern, const char *file_path) {
+    if (rm->count >= MAX_ROUTES) return -1;
     
-    if (matched_route) {
-        *matched_route = NULL;
-    }
-    return -1;
+    Route *route = &rm->routes[rm->count];
+    strcpy(route->pattern, pattern);
+    route->type = ROUTE_TYPE_STATIC;
+    strcpy(route->handler.static_path, file_path);
+    snprintf(route->description, sizeof(route->description), "Static: %s -> %s", pattern, file_path);
+    
+    rm->count++;
+    return 0;
 }
 
-void print_routes(const RouteManager *rm) {
-    if (!rm) return;
+int add_redirect_route(RouteManager *rm, const char *pattern, const char *redirect_url) {
+    if (rm->count >= MAX_ROUTES) return -1;
     
-    printf("Registered Routes (%d):\n", rm->count);
-    for (int i = 0; i < rm->count; i++) {
-        const char *type_str = "";
-        switch (rm->routes[i].type) {
-            case ROUTE_TYPE_API: type_str = "API"; break;
-            case ROUTE_TYPE_STATIC: type_str = "STATIC"; break;
-            case ROUTE_TYPE_REDIRECT: type_str = "REDIRECT"; break;
-        }
-        printf("  [%s] %s -> %s\n", type_str, rm->routes[i].pattern, rm->routes[i].handler_name);
-    }
+    Route *route = &rm->routes[rm->count];
+    strcpy(route->pattern, pattern);
+    route->type = ROUTE_TYPE_REDIRECT;
+    strcpy(route->handler.redirect_url, redirect_url);
+    snprintf(route->description, sizeof(route->description), "Redirect: %s -> %s", pattern, redirect_url);
+    
+    rm->count++;
+    return 0;
 }
+
+
+int add_api_route_with_middleware(RouteManager *rm, const char *pattern, const char *method, 
+                                 HandlerFunc handler, middleware_chain_t* middleware) {
+    if (rm->count >= MAX_ROUTES) return -1;
+    printf("DEBUG: Registering route with middleware - Pattern: %s, Method: %s\n", pattern, method);
+    printf("DEBUG: Handler: %p, Middleware: %p\n", (void*)handler, (void*)middleware);
+    
+    Route *route = &rm->routes[rm->count];
+    strcpy(route->pattern, pattern);
+    strcpy(route->method, method);
+    route->type = ROUTE_TYPE_API;
+    route->handler.api_handler = handler;
+    route->middleware = middleware; 
+    
+    rm->count++;
+    return 0;
+}
+
+

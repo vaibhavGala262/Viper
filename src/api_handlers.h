@@ -4,20 +4,17 @@
 #include "request.h"
 #include "route_manager.h"
 
-// Response structure for API handlers
-typedef struct {
-    char *content;
-    char *content_type;
-    int status_code;
-} ApiResponse;
+ApiResponse get_user_handler(HttpRequest *req, RouteParam *params, int param_count);
+ApiResponse get_add(HttpRequest *req, RouteParam *params, int param_count);
+ApiResponse get_current_time_handler(HttpRequest *req, RouteParam *params, int param_count);
+ApiResponse get_count_handler(HttpRequest *req, RouteParam *params, int param_count);
+ApiResponse get_sub(HttpRequest *req, RouteParam *params, int param_count);
 
-// Handler function signature - ALL handlers must follow this pattern
-typedef ApiResponse (*HandlerFunc)(HttpRequest *req, RouteParam *params, int param_count);
+ApiResponse create_user_handler(HttpRequest *req, RouteParam *params, int param_count);
+ApiResponse update_user_handler(HttpRequest *req, RouteParam *params, int param_count);
 
-// Function to map handler names to actual functions
+
 HandlerFunc find_handler_function(const char *handler_name);
-
-// Helper to free API response memory
 void free_api_response(ApiResponse *response);
 
 #endif

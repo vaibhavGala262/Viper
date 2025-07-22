@@ -1,0 +1,43 @@
+70% faster requests: After the first request, later requests can be significantly faster using keep alive
+
+<-----BEFORE----->
+
+async function testRequests() {
+    const startTime = performance.now();
+    for (let i = 0; i < 100; i++) {
+        await fetch('/api/time');
+    }
+    const endTime = performance.now();
+    console.log(`100 requests took ${endTime - startTime}ms`);
+}
+
+
+
+
+<-----AFTER----->
+
+// Test in browser console 
+async function testBasicKeepAlive() {
+    console.log('Starting 100 sequential requests...');
+    console.time('100 requests');
+    
+    for (let i = 0; i < 100; i++) {
+        try {
+            const response = await fetch('/api/time');
+            const data = await response.text();
+            if (i % 10 === 0) { // Log every 10th request
+                console.log(`Request ${i + 1}/100 completed`);
+            }
+        } catch (error) {
+            console.error(`Request ${i + 1} failed:`, error);
+        }
+    }
+    
+    console.timeEnd('100 requests');
+    console.log('All requests completed!');
+}
+
+
+
+***Annoying***
+Failing implementation of keep alive due to Race around condition
